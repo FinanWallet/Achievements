@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -10,15 +11,18 @@ import (
 	"github.com/FinanceUN/Achievements/routes"
 )
 
-var router *mux.Router
-
 func main() {
-	db.DBConnection()
+	client := db.DBConnection()
 
-	router = mux.NewRouter()
+	router := mux.NewRouter()
 
-    routes.IndexRoutes(router)
+	routes.IndexRoutes(router)
+	routes.AchievementsRoutes(router)
 
 	fmt.Println("Server started on port 8080")
 	http.ListenAndServe(":8080", router)
+
+    if err := client.Disconnect(context.TODO()); err != nil {
+		panic(err)
+	}
 }
