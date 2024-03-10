@@ -18,6 +18,7 @@ func main() {
 
 	routes.IndexRoutes(router)
 	routes.AchievementsRoutes(router)
+    routes.UserAchievementRoutes(router)
 
 	fmt.Println("Server started on port 8080")
 	http.ListenAndServe(":8080", router)
