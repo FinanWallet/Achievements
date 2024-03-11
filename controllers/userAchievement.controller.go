@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/FinanceUN/Achievements/services"
 	"github.com/FinanceUN/Achievements/utils"
 )
@@ -44,6 +46,20 @@ func GetUserAchievements(w http.ResponseWriter, r *http.Request) {
 	options := v.Get("options")
 
 	result, err := services.GetUserAchievements(userID, options)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "` + err.Error() + `"}`))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
+}
+
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
+	result, err := services.DeleteUser(params["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"message": "` + err.Error() + `"}`))

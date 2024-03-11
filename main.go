@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 
@@ -18,12 +19,17 @@ func main() {
 
 	routes.IndexRoutes(router)
 	routes.AchievementsRoutes(router)
-    routes.UserAchievementRoutes(router)
+	routes.UserAchievementRoutes(router)
 
-	fmt.Println("Server started on port 8080")
-	http.ListenAndServe(":8080", router)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
-    if err := client.Disconnect(context.TODO()); err != nil {
+	fmt.Println("Server started on port " + port + "...")
+	http.ListenAndServe(":"+port, router)
+
+	if err := client.Disconnect(context.TODO()); err != nil {
 		panic(err)
 	}
 }

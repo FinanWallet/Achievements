@@ -72,17 +72,40 @@ func UserExists(userID string) (bool, error) {
 	return false, nil
 }
 
-func RequirementValueReached(achievementID string, userValue float64) (bool, error) {
+func RequirementValueReached(achievementID string, userID string, userValue float64) (bool, error) {
 	achievement, err := GetAchievement(achievementID)
 	if err != nil {
 		return false, err
 	}
 
+	reached := false
+
 	if userValue >= achievement.RequirementValue {
-		return true, nil
+		reached = true
 	}
 
-	return false, nil
+	if reached && achievement.NextAchievement != primitive.NilObjectID {
+		filter := bson.M{"user_id": userID}
+
+		newAchievement := models.UserAchievement{
+			AchievementID: achievement.NextAchievement,
+			UserValue:     0,
+			Reached:       false,
+			CreatedAt:     primitive.NewDateTimeFromTime(time.Now()),
+			UpdatedAt:     primitive.NewDateTimeFromTime(time.Now()),
+		}
+
+		_, err := db.UserAchievementsCollection.UpdateOne(
+			context.Background(),
+			filter,
+			bson.M{"$push": bson.M{"achievements": newAchievement}},
+		)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return reached, nil
 }
 
 func UpdateAchievementUserValue(
@@ -93,7 +116,11 @@ func UpdateAchievementUserValue(
 		return nil, err
 	}
 
-	reached, err := RequirementValueReached(userUpdate.AchievementID, userUpdate.Value)
+	reached, err := RequirementValueReached(
+		userUpdate.AchievementID,
+		userUpdate.UserID,
+		userUpdate.Value,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -150,4 +177,15 @@ func GetUserAchievements(userID string, opt string) ([]models.UserAchievement, e
 	}
 
 	return userAchievements, nil
+}
+
+func DeleteUser(userID string) (*mongo.DeleteResult, error) {
+	filter := bson.M{"user_id": userID}
+
+	deleteResult, err := db.UserAchievementsCollection.DeleteOne(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return deleteResult, nil
 }
