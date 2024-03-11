@@ -119,36 +119,34 @@ func UpdateAchievementUserValue(
 	return updateResult, nil
 }
 
-func GetUserAchievements(userID string, options string) ([]models.UserAchievement, error) {
-	filter := bson.M{
-		"user_id": userID,
+func GetUserAchievements(userID string, opt string) ([]models.UserAchievement, error) {
+	pipeline := mongo.Pipeline{
+		bson.D{{"$match", bson.D{{"user_id", userID}}}},
+		bson.D{{"$unwind", "$achievements"}},
+		bson.D{{"$project", bson.D{{"achievements", 1}}}},
 	}
 
-	if options == "reached" {
-		filter = bson.M{
-			"user_id":              userID,
-			"achievements.reached": true,
-		}
-	} else if options == "not_reached" {
-		filter = bson.M{
-			"user_id":              userID,
-			"achievements.reached": false,
-		}
+	if opt == "reached" {
+		pipeline = append(pipeline, bson.D{{"$match", bson.D{{"achievements.reached", true}}}})
+	} else if opt == "notReached" {
+		pipeline = append(pipeline, bson.D{{"$match", bson.D{{"achievements.reached", false}}}})
 	}
 
-	var userAchievements []models.UserAchievement
-
-	cursor, err := db.UserAchievementsCollection.Find(context.Background(), filter)
+	cursor, err := db.UserAchievementsCollection.Aggregate(context.Background(), pipeline)
 	if err != nil {
 		return nil, err
 	}
 
-	defer cursor.Close(context.Background())
+	var achievementResults []struct {
+		Achievements models.UserAchievement `bson:"achievements"`
+	}
+	if err := cursor.All(context.Background(), &achievementResults); err != nil {
+		return nil, err
+	}
 
-	for cursor.Next(context.Background()) {
-		var user models.User
-		cursor.Decode(&user)
-		userAchievements = user.Achievements
+	var userAchievements []models.UserAchievement
+	for _, result := range achievementResults {
+		userAchievements = append(userAchievements, result.Achievements)
 	}
 
 	return userAchievements, nil
