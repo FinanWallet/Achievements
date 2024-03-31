@@ -13,6 +13,8 @@ import (
 )
 
 func main() {
+	fmt.Println("Starting Achievements server...")
+
 	client := db.DBConnection()
 
 	router := mux.NewRouter()
