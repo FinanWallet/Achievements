@@ -146,7 +146,7 @@ func UpdateAchievementUserValue(
 	return updateResult, nil
 }
 
-func GetUserAchievements(userID string, opt string) ([]models.UserAchievement, error) {
+func GetUserAchievements(userID string, opt string) ([]utils.UserAchievementsResponse, error) {
 	pipeline := mongo.Pipeline{
 		bson.D{{"$match", bson.D{{"user_id", userID}}}},
 		bson.D{{"$unwind", "$achievements"}},
@@ -171,9 +171,19 @@ func GetUserAchievements(userID string, opt string) ([]models.UserAchievement, e
 		return nil, err
 	}
 
-	var userAchievements []models.UserAchievement
+	var userAchievements []utils.UserAchievementsResponse
+
 	for _, result := range achievementResults {
-		userAchievements = append(userAchievements, result.Achievements)
+		achievementId := result.Achievements.AchievementID.Hex()
+		achievement, err := GetAchievement(achievementId)
+		if err != nil {
+			return nil, err
+		}
+		userAchievements = append(userAchievements, utils.UserAchievementsResponse{
+			UserAchievement: result.Achievements,
+			Achievement:     achievement,
+		})
+
 	}
 
 	return userAchievements, nil
