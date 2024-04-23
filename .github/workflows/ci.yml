@@ -37,12 +37,12 @@ jobs:
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         env:
-          SHORT_SHA: latest
+          SHORT_SHA: ${{ steps.commit.outputs.short }}
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            ${{ steps.commit.outputs.short }}
+            latest
 
       - name: Build, tag and push Docker image
         env:
