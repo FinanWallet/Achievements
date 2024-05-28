@@ -19,7 +19,7 @@ COPY --from=builder /app/myapp /
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY .env /
 
-EXPOSE 8080
+EXPOSE 7001
 
 # Set the entry point for the container
 ENTRYPOINT ["/myapp"]
